@@ -2,41 +2,45 @@ import streamlit as st
 import pandas as pd
 import joblib
 
-st.set_page_config(
-    page_title="Earthquake Prediction Dashboard",
-    layout="wide"
-)
+st.set_page_config(page_title="Earthquake Prediction", layout="wide")
 
+st.title("🌍 Earthquake Prediction System")
+st.markdown("Prediksi **Gempa vs Tidak Gempa** berdasarkan **sampel dataset**")
+
+# =========================
+# LOAD MODEL & DATASET
+# =========================
 model = joblib.load("model_gempa.pkl")
 
-st.title("🌍 Earthquake Prediction Dashboard")
-st.markdown("Sistem klasifikasi **Gempa vs Tidak Gempa** berbasis Machine Learning")
+df = pd.read_csv("data_preprocessed.csv")
 
-uploaded_file = st.file_uploader("Upload file CSV", type=["csv"])
+st.subheader("📄 Dataset")
+st.dataframe(df.head())
 
-if uploaded_file:
-    df = pd.read_csv(uploaded_file)
+# =========================
+# PILIH SAMPEL
+# =========================
+st.subheader("🎯 Pilih Sampel")
 
-    st.subheader("📄 Preview Data")
-    st.dataframe(df.head())
+index = st.number_input(
+    "Pilih nomor sampel",
+    min_value=0,
+    max_value=len(df) - 1,
+    value=0,
+    step=1
+)
 
-    X = df[["magnitudo", "kedalaman", "jarak"]]
-    preds = model.predict(X)
+sample = df.iloc[[index]]
 
-    df["Prediksi"] = ["GEMPA" if p != 0 else "TIDAK GEMPA" for p in preds]
+st.write("### Data Sampel Terpilih")
+st.dataframe(sample)
 
-    st.subheader("📊 Statistik Hasil")
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Total Data", len(df))
-    col2.metric("Gempa", (df["Prediksi"] == "GEMPA").sum())
-    col3.metric("Tidak Gempa", (df["Prediksi"] == "TIDAK GEMPA").sum())
+# =========================
+# PREDIKSI
+# =========================
+if st.button("🔍 Prediksi Sampel"):
+    pred = model.predict(sample)[0]
 
-    st.subheader("📋 Hasil Prediksi")
-    st.dataframe(df)
+    hasil = "GEMPA" if pred != 0 else "TIDAK GEMPA"
 
-    st.download_button(
-        "⬇️ Download Hasil CSV",
-        df.to_csv(index=False),
-        file_name="hasil_prediksi_gempa.csv",
-        mime="text/csv"
-    )
+    st.success(f"HASIL PREDIKSI: **{hasil}**")
