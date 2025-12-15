@@ -2,26 +2,30 @@ import streamlit as st
 import pandas as pd
 import joblib
 
-st.set_page_config(page_title="Earthquake Prediction", layout="wide")
+st.set_page_config(
+    page_title="Earthquake Prediction",
+    layout="wide"
+)
 
 st.title("🌍 Earthquake Prediction System")
-st.markdown("Prediksi **Gempa vs Tidak Gempa** berdasarkan **sampel dataset**")
+st.markdown("Pilih **sampel data** untuk memprediksi **Gempa / Tidak Gempa**")
 
 # =========================
-# LOAD MODEL & DATASET
+# LOAD FILE
 # =========================
 model = joblib.load("model_gempa.pkl")
+feature_names = joblib.load("feature_names.pkl")
+df = pd.read_csv("data_preprocessed.csv")
 
-df = pd.read_csv("earthquakes_data.csv")
-
-st.subheader("📄 Dataset")
+# =========================
+# TAMPILKAN DATA
+# =========================
+st.subheader("📄 Dataset (Preprocessed)")
 st.dataframe(df.head())
 
 # =========================
 # PILIH SAMPEL
 # =========================
-st.subheader("🎯 Pilih Sampel")
-
 index = st.number_input(
     "Pilih nomor sampel",
     min_value=0,
@@ -31,16 +35,15 @@ index = st.number_input(
 )
 
 sample = df.iloc[[index]]
+X_sample = sample[feature_names]
 
-st.write("### Data Sampel Terpilih")
-st.dataframe(sample)
+st.write("### Sampel Terpilih")
+st.dataframe(X_sample)
 
 # =========================
 # PREDIKSI
 # =========================
-if st.button("🔍 Prediksi Sampel"):
-    pred = model.predict(sample)[0]
-
+if st.button("🔍 Prediksi"):
+    pred = model.predict(X_sample)[0]
     hasil = "GEMPA" if pred != 0 else "TIDAK GEMPA"
-
     st.success(f"HASIL PREDIKSI: **{hasil}**")
