@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import joblib
 import numpy as np
-import matplotlib.pyplot as plt
 
 # =========================
 # CONFIG
@@ -14,27 +13,34 @@ st.set_page_config(
 
 st.title("🌍 Earthquake Prediction Dashboard")
 st.markdown(
-    "Prediksi **Gempa / Tidak Gempa** disertai **Amplitudo** dan "
-    "**Visualisasi Seismometer (representatif)**"
+    """
+    Sistem klasifikasi **Gempa / Tidak Gempa**  
+    berdasarkan **data seismik hasil preprocessing**.
+    """
 )
 
 # =========================
-# LOAD FILE
+# LOAD MODEL & DATA
 # =========================
 model = joblib.load("model_gempa.pkl")
 feature_names = joblib.load("feature_names.pkl")
-df = pd.read_csv("data_preprocessed.csv")
+df = pd.read_csv("data_streamlit.csv")
 
 # =========================
-# TAMPILKAN DATA
+# INFO DATASET
 # =========================
-st.subheader("📄 Dataset (Preprocessed)")
+st.subheader("📊 Informasi Dataset")
+col1, col2 = st.columns(2)
+col1.metric("Jumlah Sampel", len(df))
+col2.metric("Jumlah Fitur", df.shape[1])
+
+st.subheader("📄 Contoh Data")
 st.dataframe(df.head())
 
 # =========================
 # PILIH SAMPEL
 # =========================
-st.subheader("🎯 Pilih Sampel")
+st.subheader("🎯 Pilih Sampel Data")
 
 index = st.number_input(
     "Pilih nomor sampel",
@@ -47,7 +53,7 @@ index = st.number_input(
 sample = df.iloc[[index]]
 X_sample = sample[feature_names]
 
-st.write("### Data Sampel Terpilih")
+st.write("### Sampel Terpilih")
 st.dataframe(X_sample)
 
 # =========================
@@ -55,40 +61,33 @@ st.dataframe(X_sample)
 # =========================
 if st.button("🔍 Prediksi Sampel"):
 
+    # Prediksi kelas
     pred = model.predict(X_sample)[0]
-    hasil = "GEMPA" if pred != 0 else "TIDAK GEMPA"
+    hasil = "GEMPA" if pred == 1 else "TIDAK GEMPA"
 
-    # =========================
-    # HITUNG AMPLITUDO (REPRESENTATIF)
-    # =========================
+    # Probabilitas
+    proba = model.predict_proba(X_sample)[0]
+
+    # Amplitudo (representatif)
     amplitudo = float(np.max(np.abs(X_sample.values)))
 
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
 
-    with col1:
-        st.success(f"### 🧭 Hasil Prediksi\n**{hasil}**")
-
-    with col2:
-        st.info(f"### 📈 Amplitudo\n**{amplitudo:.4f}**")
+    col1.success(f"🧭 **Hasil Prediksi**\n\n{hasil}")
+    col2.info(f"📈 **Amplitudo**\n\n{amplitudo:.4f}")
+    col3.warning(
+        f"📊 **Probabilitas Gempa**\n\n{proba[1]*100:.2f}%"
+    )
 
     # =========================
     # VISUALISASI SEISMOMETER
     # =========================
-    st.subheader("📊 Visualisasi Seismometer (Representatif)")
+    st.subheader("📉 Visualisasi Seismometer (Representatif)")
 
     signal = X_sample.values.flatten()
-
-    fig, ax = plt.subplots(figsize=(10, 3))
-    ax.plot(signal, linewidth=1)
-    ax.axhline(0, linestyle="--", alpha=0.5)
-
-    ax.set_title("Seismogram (Representasi Fitur Sampel)")
-    ax.set_xlabel("Index Fitur")
-    ax.set_ylabel("Amplitudo")
-
-    st.pyplot(fig)
+    st.line_chart(signal)
 
     st.caption(
-        "Catatan: Grafik ini merupakan visualisasi representatif "
-        "berdasarkan fitur hasil preprocessing, bukan sinyal mentah seismik."
+        "Grafik merupakan visualisasi representatif dari fitur numerik "
+        "hasil preprocessing, bukan sinyal mentah seismik."
     )
