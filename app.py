@@ -12,7 +12,7 @@ st.markdown("Prediksi **Gempa vs Tidak Gempa** berdasarkan **sampel dataset**")
 # =========================
 model = joblib.load("model_gempa.pkl")
 
-df = pd.read_csv("data_preprocessed.csv")
+df = pd.read_csv("earthquakes_data.csv")
 
 st.subheader("📄 Dataset")
 st.dataframe(df.head())
